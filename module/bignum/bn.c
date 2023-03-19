@@ -32,15 +32,15 @@ void bn_add(bn_t *dst, bn_t *b)
 {
     int ci = 0;
     for (int i = 0; i < b->size; ++i) {
-        if (dst->size == i)
+        while (dst->size <= i)
             bn_size_inc(dst);
         int co = (dst->data[i] += b->data[i]) < b->data[i];
         ci = co || (dst->data[i] += ci) < ci;
     }
     for (int i = b->size; ci; ++i) {
-        if (dst->size == i)
+        while (dst->size <= i)
             bn_size_inc(dst);
-        ci = (dst->data[i] += ci) < 1;
+        ci = (dst->data[i] += ci) < ci;
     }
 }
 void bn_set(bn_t *dst, uint64_t v)
