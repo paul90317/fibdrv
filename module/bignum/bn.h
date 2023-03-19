@@ -19,5 +19,5 @@ void bn_free(bn_t *tmp);
 void bn_swap(bn_t *a, bn_t *b);
 void bn_add(bn_t *dst, bn_t *b);
 void bn_set(bn_t *dst, uint64_t v);
-int bn_raw(uint8_t *dst, bn_t *src);
+int bn_count(bn_t *a);
 #endif

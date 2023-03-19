@@ -70,10 +70,8 @@ static ssize_t fib_read(struct file *file,
 {
     bn_t *a = bn_new(size);
     F(a, size);
-    uint8_t *data =
-        calloc(a->size * sizeof(uint64_t) / sizeof(uint8_t), sizeof(uint8_t));
-    int sz = bn_raw(data, a);
-    copy_to_user(buf, data, sz);
+    int sz = bn_count(a);
+    copy_to_user(buf, a->data, sz);
     return sz;
 }
 

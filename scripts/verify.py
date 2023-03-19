@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
-expect = [0, 1]
 result = []
 result_split = []
 dics = []
+expect = [0, 1]
+def F(i):
+    if i < len(expect):
+        return expect[i]
+    for i in range(len(expect), i + 1):
+        expect.append(expect[-1] + expect[-2])
+    return expect[-1]
 
 with open('out', 'r') as f:
-    tmp = f.readline()
-    while (tmp):
-        result.append(tmp)
-        tmp = f.readline()
-    f.close()
+    result=f.readlines()
+    
 for r in result:
     if (r.find('Reading') != -1):
         result_split.append(r.split(' '))
@@ -18,13 +21,10 @@ for r in result:
         f0 = int(result_split[-1][9].split('.')[0])
         dics.append((k, f0))
 
-for i in range(2, len(dics)+1):
-    expect.append(expect[i - 1] + expect[i - 2])
-
 for i in dics:
-    fib = i[1] 
-    if (expect[i[0]] != fib):
+    fib = i[1]
+    if (F(i[0]) != fib):
         print('f(%s) fail' % str(i[0]))
         print('input:    %s' %(fib))
-        print('expected: %s' %(expect[i[0]]))
+        print('expected: %s' %(F(i[0])))
         exit("wrong answer!")

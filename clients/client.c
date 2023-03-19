@@ -9,8 +9,7 @@
 #include "utils.h"
 
 #define FIB_DEV "/dev/fibonacci"
-#define N_UINT8 32
-
+#define N_UINT8 1000
 int main()
 {
     long long sz;
@@ -18,7 +17,7 @@ int main()
     uint8_t buf[N_UINT8];
     char s[N_UINT8 * 3 + 1];
     char write_buf[] = "testing writing";
-    int offset = 100; /* TODO: try test something bigger than the limit */
+    int offset = 1000; /* TODO: try test something bigger than the limit */
 
     int fd = open(FIB_DEV, O_RDWR);
     if (fd < 0) {
