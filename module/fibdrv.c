@@ -7,6 +7,8 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 
+#include "bignum/bn.h"
+
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
 MODULE_DESCRIPTION("Fibonacci engine driver");
@@ -24,19 +26,25 @@ static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static long long fib_sequence(long long k)
+static void F(bn_t *a, size_t k)
 {
     /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
-    long long f[k + 2];
-
-    f[0] = 0;
-    f[1] = 1;
-
-    for (int i = 2; i <= k; i++) {
-        f[i] = f[i - 1] + f[i - 2];
+    if (k == 0) {
+        bn_set(a, 0);
+        return;
     }
-
-    return f[k];
+    if (k == 1) {
+        bn_set(a, 1);
+        return;
+    }
+    bn_set(a, 0);
+    bn_t *b = bn_new(1);
+    for (int i = 2; i <= k; ++i) {
+        bn_add(a, b);
+        bn_swap(a, b);
+    }
+    bn_swap(a, b);
+    bn_free(b);
 }
 
 static int fib_open(struct inode *inode, struct file *file)
@@ -60,7 +68,13 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    bn_t *a = bn_new(size);
+    F(a, size);
+    uint8_t *data =
+        calloc(a->size * sizeof(uint64_t) / sizeof(uint8_t), sizeof(uint8_t));
+    int sz = bn_raw(data, a);
+    copy_to_user(buf, data, sz);
+    return sz;
 }
 
 /* write operation is skipped */

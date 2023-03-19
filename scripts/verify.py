@@ -5,8 +5,6 @@ result = []
 result_split = []
 dics = []
 
-for i in range(2, 101):
-    expect.append(expect[i - 1] + expect[i - 2])
 with open('out', 'r') as f:
     tmp = f.readline()
     while (tmp):
@@ -19,10 +17,14 @@ for r in result:
         k = int(result_split[-1][5].split(',')[0])
         f0 = int(result_split[-1][9].split('.')[0])
         dics.append((k, f0))
+
+for i in range(2, len(dics)+1):
+    expect.append(expect[i - 1] + expect[i - 2])
+
 for i in dics:
     fib = i[1] 
     if (expect[i[0]] != fib):
         print('f(%s) fail' % str(i[0]))
-        print('input: %s' %(fib))
+        print('input:    %s' %(fib))
         print('expected: %s' %(expect[i[0]]))
-        exit()
+        exit("WA")

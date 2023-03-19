@@ -2,6 +2,7 @@ CONFIG_MODULE_SIG = n
 TARGET_MODULE := fibdrv
 
 obj-m := $(TARGET_MODULE).o
+$(TARGET_MODULE)-y := module/$(TARGET_MODULE).o module/bignum/bn.o
 ccflags-y := -std=gnu99 -Wno-declaration-after-statement
 
 KDIR := /lib/modules/$(shell uname -r)/build
@@ -18,14 +19,19 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) client out
+	$(RM) client/client out
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:
 	sudo rmmod $(TARGET_MODULE) || true >/dev/null
 
-client: client.c
-	$(CC) -o $@ $^
+client: client/client.c client/utils.c
+	$(CC) -o $@/$@ $^
+
+format:
+	clang-format -i client/*.[ch]
+	clang-format -i module/*.[ch]
+	clang-format -i module/*/*.[ch]
 
 PRINTF = env printf
 PASS_COLOR = \e[32;01m
@@ -35,7 +41,6 @@ pass = $(PRINTF) "$(PASS_COLOR)$1 Passed [-]$(NO_COLOR)\n"
 check: all
 	$(MAKE) unload
 	$(MAKE) load
-	sudo ./client > out
+	sudo ./client/client > out
 	$(MAKE) unload
-	@diff -u out scripts/expected.txt && $(call pass)
-	@scripts/verify.py
+	@scripts/verify.py && $(call pass)
