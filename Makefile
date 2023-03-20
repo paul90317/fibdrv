@@ -10,7 +10,7 @@ PWD := $(shell pwd)
 
 GIT_HOOKS := .git/hooks/applied
 
-all: $(GIT_HOOKS) client
+all: $(GIT_HOOKS) client time_get
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 $(GIT_HOOKS):
@@ -19,14 +19,18 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) clients/client out
+	$(RM) clients/client out clients/time_get
+
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:
 	sudo rmmod $(TARGET_MODULE) || true >/dev/null
 
-client: clients/client.c clients/utils.c
+client: clients/client.o clients/utils.o
 	$(CC) -o clients/client $^
+
+time_get: clients/time_get.o
+	$(CC) -o clients/time_get $^
 
 format:
 	clang-format -i clients/*.[ch]
@@ -37,6 +41,14 @@ PRINTF = env printf
 PASS_COLOR = \e[32;01m
 NO_COLOR = \e[0m
 pass = $(PRINTF) "$(PASS_COLOR)$1 Passed [-]$(NO_COLOR)\n"
+
+time: all
+	$(MAKE) unload
+	$(MAKE) load
+	isolcpus=0
+	sudo taskset 0x1 ./clients/time_get > out
+	$(MAKE) unload
+	@python3 scripts/time_get.py
 
 check: all
 	$(MAKE) unload

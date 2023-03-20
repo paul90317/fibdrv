@@ -6,6 +6,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/time.h>
 
 #include "bignum/bn.h"
 
@@ -62,6 +63,7 @@ static int fib_release(struct inode *inode, struct file *file)
     return 0;
 }
 
+static ktime_t kt;
 /* calculate the fibonacci number at given offset */
 static ssize_t fib_read(struct file *file,
                         char *buf,
@@ -69,7 +71,9 @@ static ssize_t fib_read(struct file *file,
                         loff_t *offset)
 {
     bn_t *a = bn_new(size);
+    kt = ktime_get();
     F(a, size);
+    kt = ktime_sub(ktime_get(), kt);
     int sz = bn_count(a);
     copy_to_user(buf, a->data, sz);
     return sz;
@@ -81,7 +85,7 @@ static ssize_t fib_write(struct file *file,
                          size_t size,
                          loff_t *offset)
 {
-    return 1;
+    return ktime_to_ns(kt);
 }
 
 static loff_t fib_device_lseek(struct file *file, loff_t offset, int orig)
