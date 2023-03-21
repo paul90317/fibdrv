@@ -29,7 +29,8 @@ dkms.conf
 # test-oriented
 client
 out
-time_get
+fibget
+single
 
 # vscode
 .vscode

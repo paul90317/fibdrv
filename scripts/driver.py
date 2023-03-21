@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pylab as plt
+import os
 
 def outlier_filter(datas, threshold = 2):
     datas = np.array(datas)
@@ -8,17 +9,19 @@ def outlier_filter(datas, threshold = 2):
 
 data :dict[int,tuple[list[int],list[int]]] = {}
 
-with open("out", "r") as f:
-    for li in f.readlines():
-        i, ktime, utime = li.split(' ')
-        i = int(i)
-        ktime = int(ktime)
-        utime = int(utime)
-        if i not in data:
-            data[i] = ([ktime],[utime])
-        else:
-            data[i][0].append(ktime)
-            data[i][1].append(utime)
+max_term = 1000
+times = 50
+mode = 1
+for li in os.popen(f'sudo ./clients/fibget {max_term} {times} {mode}').readlines():
+    term, ktime, utime, _ = li.split(' ')
+    term = int(term)
+    ktime = int(ktime)
+    utime = int(utime)
+    if term not in data:
+        data[term] = ([ktime],[utime])
+    else:
+        data[term][0].append(ktime)
+        data[term][1].append(utime)
 
 x :list[int] = []
 y1 :list[int] = []

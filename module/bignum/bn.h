@@ -17,7 +17,10 @@ typedef struct {
 bn_t *bn_new(uint64_t v);
 void bn_free(bn_t *tmp);
 void bn_swap(bn_t *a, bn_t *b);
-void bn_add(bn_t *dst, bn_t *b);
-void bn_set(bn_t *dst, uint64_t v);
-int bn_count(bn_t *a);
+void bn_add(bn_t *dst, const bn_t *b);
+void bn_set(bn_t *dst, const uint64_t v);
+int bn_count(const bn_t *a);
+void bn_mul(bn_t *dst, const bn_t *a, const bn_t *b);
+void bn_assign(bn_t *dst, const bn_t *src);
+void bn_lshift(bn_t *a);
 #endif

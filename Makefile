@@ -10,7 +10,7 @@ PWD := $(shell pwd)
 
 GIT_HOOKS := .git/hooks/applied
 
-all: $(GIT_HOOKS) client time_get
+all: $(GIT_HOOKS) client fibget single
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 $(GIT_HOOKS):
@@ -19,7 +19,7 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) clients/client out clients/time_get
+	$(RM) clients/client out clients/time_get clients/single
 
 load:
 	sudo insmod $(TARGET_MODULE).ko
@@ -29,9 +29,10 @@ unload:
 client: clients/client.o clients/utils.o
 	$(CC) -o clients/client $^
 
-time_get: clients/time_get.o
-	$(CC) -o clients/time_get $^
-
+fibget: clients/fibget.o clients/utils.o
+	$(CC) -o clients/fibget $^
+single: clients/single.o clients/utils.o
+	$(CC) -o clients/single $^
 format:
 	clang-format -i clients/*.[ch]
 	clang-format -i module/*.[ch]
@@ -45,10 +46,21 @@ pass = $(PRINTF) "$(PASS_COLOR)$1 Passed [-]$(NO_COLOR)\n"
 time: all
 	$(MAKE) unload
 	$(MAKE) load
-	isolcpus=0
-	sudo taskset 0x1 ./clients/time_get > out
+	@python3 scripts/driver.py
 	$(MAKE) unload
-	@python3 scripts/time_get.py
+
+compare: all
+	$(MAKE) unload
+	$(MAKE) load
+	@python3 scripts/compare.py
+	$(MAKE) unload
+
+setcpu:
+	isolcpus=0
+	sudo sh -c "echo 0 > /proc/sys/kernel/randomize_va_space"
+	sudo sh -c "echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo"
+	sudo sh -c "echo off > /sys/devices/system/cpu/smt/control"
+	sudo sh performance.sh
 
 check: all
 	$(MAKE) unload

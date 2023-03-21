@@ -27,7 +27,7 @@ static struct cdev *fib_cdev;
 static struct class *fib_class;
 static DEFINE_MUTEX(fib_mutex);
 
-static void F(bn_t *a, size_t k)
+static void fib_dp(bn_t *a, size_t k)
 {
     /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
     if (k == 0) {
@@ -47,6 +47,47 @@ static void F(bn_t *a, size_t k)
     bn_swap(a, b);
     bn_free(b);
 }
+static void fib_fast_doubling(bn_t *a, size_t n)
+{
+    if (n == 0) {
+        bn_set(a, 0);
+        return;
+    }
+    if (n == 1) {
+        bn_set(a, 1);
+        return;
+    }
+
+    bn_t *fpr = bn_new(1);
+    bn_t *fch = bn_new(0);
+    bn_t *c = bn_new(0);
+    bn_t *d = bn_new(0);
+
+    for (int i = 30 - __builtin_clz(n); i >= 0; --i) {
+        bn_assign(c, fch);
+        bn_lshift(c);
+        bn_add(c, fpr);
+        bn_mul(d, c, fpr);
+
+        bn_mul(a, fpr, fpr);
+        bn_mul(c, fch, fch);
+        bn_add(a, c);
+
+        if (n >> i & 1) {
+            bn_swap(fch, d);
+            bn_swap(fpr, a);
+            bn_add(fpr, fch);
+        } else {
+            bn_swap(fpr, d);
+            bn_swap(fch, a);
+        }
+    }
+    bn_swap(a, fpr);
+    bn_free(fpr);
+    bn_free(fch);
+    bn_free(c);
+    bn_free(d);
+}
 
 static int fib_open(struct inode *inode, struct file *file)
 {
@@ -65,17 +106,23 @@ static int fib_release(struct inode *inode, struct file *file)
 
 static ktime_t kt;
 /* calculate the fibonacci number at given offset */
-static ssize_t fib_read(struct file *file,
-                        char *buf,
-                        size_t size,
-                        loff_t *offset)
+static ssize_t fib_read(struct file *file, char *buf, size_t term, loff_t *mode)
 {
-    bn_t *a = bn_new(size);
     kt = ktime_get();
-    F(a, size);
+    bn_t *a = bn_new(0);
+    switch (*mode) {
+    default:
+    case 0:
+        fib_dp(a, term);
+        break;
+    case 1:
+        fib_fast_doubling(a, term);
+        break;
+    }
     kt = ktime_sub(ktime_get(), kt);
     int sz = bn_count(a);
     copy_to_user(buf, a->data, sz);
+    bn_free(a);
     return sz;
 }
 
